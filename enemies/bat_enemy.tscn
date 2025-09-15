@@ -1,8 +1,9 @@
-[gd_scene load_steps=16 format=3 uid="uid://ci4qsdeemblsc"]
+[gd_scene load_steps=20 format=3 uid="uid://ci4qsdeemblsc"]
 
 [ext_resource type="Script" path="res://enemies/bat_enemy.gd" id="1_eog2n"]
 [ext_resource type="Texture2D" uid="uid://urx2onrj6oc1" path="res://enemies/bat.png" id="1_sy8rm"]
 [ext_resource type="Texture2D" uid="uid://b4h6xdrsyofok" path="res://shadows/small_shadow.png" id="2_upn88"]
+[ext_resource type="Script" path="res://damage_boxes/hurtbox.gd" id="4_rlh7e"]
 
 [sub_resource type="CircleShape2D" id="CircleShape2D_db0vk"]
 radius = 5.0
@@ -20,6 +21,30 @@ tracks/0/keys = {
 "transitions": PackedFloat32Array(1),
 "update": 1,
 "values": [0]
+}
+tracks/1/type = "value"
+tracks/1/imported = false
+tracks/1/enabled = true
+tracks/1/path = NodePath(".:collision_layer")
+tracks/1/interp = 1
+tracks/1/loop_wrap = true
+tracks/1/keys = {
+"times": PackedFloat32Array(0),
+"transitions": PackedFloat32Array(1),
+"update": 1,
+"values": [4]
+}
+tracks/2/type = "value"
+tracks/2/imported = false
+tracks/2/enabled = true
+tracks/2/path = NodePath(".:collision_mask")
+tracks/2/interp = 1
+tracks/2/loop_wrap = true
+tracks/2/keys = {
+"times": PackedFloat32Array(0),
+"transitions": PackedFloat32Array(1),
+"update": 1,
+"values": [7]
 }
 
 [sub_resource type="Animation" id="Animation_2apbq"]
@@ -40,14 +65,59 @@ tracks/0/keys = {
 "values": [0, 1, 2, 3, 4]
 }
 
+[sub_resource type="Animation" id="Animation_3ranw"]
+resource_name = "hit"
+length = 0.2
+step = 0.1
+tracks/0/type = "value"
+tracks/0/imported = false
+tracks/0/enabled = true
+tracks/0/path = NodePath("bat:frame")
+tracks/0/interp = 1
+tracks/0/loop_wrap = true
+tracks/0/keys = {
+"times": PackedFloat32Array(0),
+"transitions": PackedFloat32Array(1),
+"update": 1,
+"values": [3]
+}
+tracks/1/type = "value"
+tracks/1/imported = false
+tracks/1/enabled = true
+tracks/1/path = NodePath(".:collision_layer")
+tracks/1/interp = 1
+tracks/1/loop_wrap = true
+tracks/1/keys = {
+"times": PackedFloat32Array(0, 0.2),
+"transitions": PackedFloat32Array(1, 1),
+"update": 1,
+"values": [0, 4]
+}
+tracks/2/type = "value"
+tracks/2/imported = false
+tracks/2/enabled = true
+tracks/2/path = NodePath(".:collision_mask")
+tracks/2/interp = 1
+tracks/2/loop_wrap = true
+tracks/2/keys = {
+"times": PackedFloat32Array(0, 0.2),
+"transitions": PackedFloat32Array(1, 1),
+"update": 1,
+"values": [3, 7]
+}
+
 [sub_resource type="AnimationLibrary" id="AnimationLibrary_23p7a"]
 _data = {
 "RESET": SubResource("Animation_y01y6"),
-"fly": SubResource("Animation_2apbq")
+"fly": SubResource("Animation_2apbq"),
+"hit": SubResource("Animation_3ranw")
 }
 
 [sub_resource type="AnimationNodeAnimation" id="AnimationNodeAnimation_fpuf0"]
 animation = &"fly"
+
+[sub_resource type="AnimationNodeAnimation" id="AnimationNodeAnimation_h07sj"]
+animation = &"hit"
 
 [sub_resource type="AnimationNodeAnimation" id="AnimationNodeAnimation_wvnff"]
 animation = &"fly"
@@ -63,16 +133,22 @@ advance_expression = "can_see_player()"
 advance_mode = 2
 advance_expression = "not can_see_player()"
 
+[sub_resource type="AnimationNodeStateMachineTransition" id="AnimationNodeStateMachineTransition_th0p1"]
+advance_mode = 2
+advance_expression = "velocity == Vector2(0, 0)"
+
 [sub_resource type="AnimationNodeStateMachine" id="AnimationNodeStateMachine_ff0or"]
 states/chase/node = SubResource("AnimationNodeAnimation_fpuf0")
 states/chase/position = Vector2(447, 186)
+states/hit/node = SubResource("AnimationNodeAnimation_h07sj")
+states/hit/position = Vector2(590, 100)
 states/idle/node = SubResource("AnimationNodeAnimation_wvnff")
 states/idle/position = Vector2(447, 100)
-transitions = ["Start", "idle", SubResource("AnimationNodeStateMachineTransition_u8fha"), "idle", "chase", SubResource("AnimationNodeStateMachineTransition_nbwsq"), "chase", "idle", SubResource("AnimationNodeStateMachineTransition_ww2eg")]
-graph_offset = Vector2(-5, 20)
+transitions = ["Start", "idle", SubResource("AnimationNodeStateMachineTransition_u8fha"), "idle", "chase", SubResource("AnimationNodeStateMachineTransition_nbwsq"), "chase", "idle", SubResource("AnimationNodeStateMachineTransition_ww2eg"), "hit", "idle", SubResource("AnimationNodeStateMachineTransition_th0p1")]
+graph_offset = Vector2(-18, -6)
 
 [sub_resource type="AnimationNodeBlendTree" id="AnimationNodeBlendTree_i2scr"]
-graph_offset = Vector2(-168, 73)
+graph_offset = Vector2(-612.416, 59.8587)
 nodes/StateMachine/node = SubResource("AnimationNodeStateMachine_ff0or")
 nodes/StateMachine/position = Vector2(80, 120)
 node_connections = [&"output", 0, &"StateMachine"]
@@ -114,8 +190,11 @@ anim_player = NodePath("../AnimationPlayer")
 [node name="RayCast2D" type="RayCast2D" parent="."]
 target_position = Vector2(8, 0)
 
-[node name="Area2D" type="Area2D" parent="."]
+[node name="Hurtbox" type="Area2D" parent="."]
+collision_layer = 16
+collision_mask = 16
+script = ExtResource("4_rlh7e")
 
-[node name="CollisionShape2D" type="CollisionShape2D" parent="Area2D"]
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Hurtbox"]
 position = Vector2(0, -8)
 shape = SubResource("CircleShape2D_kcrmi")

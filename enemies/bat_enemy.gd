@@ -3,18 +3,20 @@ extends CharacterBody2D
 @onready var bats_sprite = $bat
 @onready var animation_tree = $AnimationTree
 @onready var playback = animation_tree.get("parameters/StateMachine/playback") as AnimationNodeStateMachinePlayback
-@onready var area_2d = $Area2D
+@onready var hurtbox = $Hurtbox
 
 @export var aggro_range  = 64
 @export var deaggro_range = 82
 @export var SPEED = 50
+@export var knockback_speed = 150
 
+const FRICTION = 500
+var i = 1
 func _ready() -> void:
-	area_2d.area_entered.connect(func(other_area_2d: Area2D):
-		queue_free()
-	)
+	hurtbox.hurt.connect(take_hit)
 
-func _physics_process(_delta):
+func _physics_process(delta):
+	i += 1
 	var state = playback.get_current_node()
 	var player: = get_player()
 	match state:
@@ -24,6 +26,9 @@ func _physics_process(_delta):
 				velocity = global_position.direction_to(player.global_position) * SPEED
 				bats_sprite.scale.x = sign(velocity.x)
 				move_and_slide()
+		"hit":
+			velocity = velocity.move_toward(Vector2.ZERO, FRICTION * delta)
+			move_and_slide()
 
 func get_player() -> Player:
 	return get_tree().get_first_node_in_group("player")
@@ -56,3 +61,8 @@ func is_player_in_deaggro_range() -> bool:
 		if distance_to_player < deaggro_range:
 			result = true
 	return result
+
+func take_hit(other_hitbox: Hitbox):
+	velocity = other_hitbox.knockback_direction * knockback_speed
+	playback.start("hit")
+	print("Hit!")

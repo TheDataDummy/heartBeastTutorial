@@ -3,6 +3,7 @@ class_name Player extends CharacterBody2D
 # Animation
 @onready var animation_tree = $AnimationTree
 @onready var playback = animation_tree.get("parameters/StateMachine/playback") as AnimationNodeStateMachinePlayback
+@onready var hitbox = $Hitbox
 
 # Movement
 const SPEED = 100.0
@@ -26,6 +27,7 @@ func move_state(_delta: float) -> void:
 	# State and blend positions update
 	velocity = input_vector * SPEED
 	if input_vector != Vector2.ZERO:
+		hitbox.knockback_direction = input_vector
 		update_blend_positions(input_vector)
 	
 	if Input.is_action_just_pressed("attack"):
